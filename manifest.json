@@ -2,7 +2,7 @@
   "name": "СнабЧат — Презентация запуска",
   "short_name": "СнабЧат",
   "description": "AI-ассистент для отдела закупок СГК",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#F0F4FA",
