@@ -89,13 +89,23 @@
     }
     /* Cinema mode */
     @keyframes cinemaWave{0%,100%{height:4px}50%{height:18px}}
-    .cinema-active .nav-controls{background:rgba(0,0,0,.7)!important;border-color:rgba(255,255,255,.1)!important}
-    .cinema-active .nav-btn{background:rgba(255,255,255,.1)!important;color:#fff!important}
-    .cinema-active .nav-btn:hover{background:rgba(255,255,255,.2)!important}
-    .cinema-active .dot{background:rgba(255,255,255,.25)!important}
-    .cinema-active .dot.active{background:#42A5F5!important}
-    .cinema-active .slide-counter{color:rgba(255,255,255,.6)!important}
-    .cinema-active #cinemaBtn{background:#2563EB!important;color:#fff!important}
+    .cinema-active .nav-controls{opacity:0!important;pointer-events:none!important;transition:opacity .4s ease!important}
+
+    /* Start screen */
+    #startScreen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0D2B5E 0%,#003A7A 40%,#0D376D 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:opacity .8s ease,transform .8s ease}
+    #startScreen.hiding{opacity:0;transform:scale(1.05);pointer-events:none}
+    #startScreen .start-logo{width:min(28vw,200px);height:auto;margin-bottom:32px;filter:drop-shadow(0 20px 40px rgba(0,0,0,.3));animation:startFloat 4s ease-in-out infinite}
+    @keyframes startFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+    #startScreen .start-title{font-family:Georgia,'Times New Roman',serif;font-size:clamp(2.6rem,6vw,4.8rem);font-weight:700;color:#fff;letter-spacing:-.02em;margin-bottom:8px;text-shadow:0 4px 24px rgba(0,0,0,.3)}
+    #startScreen .start-title span{color:#42A5F5}
+    #startScreen .start-sub{font-size:clamp(.75rem,1.3vw,.95rem);letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.45);font-weight:600;margin-bottom:48px}
+    #startScreen .start-btn{display:flex;align-items:center;gap:12px;padding:18px 48px;border-radius:999px;background:linear-gradient(135deg,#2563EB,#0099CC);color:#fff;font-size:1.15rem;font-weight:700;border:none;cursor:pointer;box-shadow:0 12px 40px rgba(37,99,235,.4);transition:transform .2s,box-shadow .2s;letter-spacing:.03em}
+    #startScreen .start-btn:hover{transform:scale(1.05);box-shadow:0 16px 52px rgba(37,99,235,.5)}
+    #startScreen .start-btn:active{transform:scale(.98)}
+    @keyframes startPulseRing{0%{transform:translate(-50%,-50%) scale(1);opacity:.4}100%{transform:translate(-50%,-50%) scale(2.2);opacity:0}}
+    .start-pulse{position:absolute;width:200px;height:200px;border-radius:50%;border:2px solid rgba(66,165,245,.3);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;animation:startPulseRing 3s ease-out infinite}
+    .start-pulse:nth-child(2){animation-delay:1s}
+    .start-pulse:nth-child(3){animation-delay:2s}
 
     .logo-clean{mix-blend-mode:normal}
     @media (max-width:900px){.logo-clean{width:min(46vw,250px)!important;max-width:250px!important}}
@@ -216,7 +226,22 @@
     .fb-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex:none}
   </style>
 </head>
-<body><div class="mouse-spotlight"></div><div class="deck">
+<body>
+<!-- ═══ START SCREEN ═══ -->
+<div id="startScreen">
+  <div class="start-pulse"></div>
+  <div class="start-pulse"></div>
+  <div class="start-pulse"></div>
+  <img class="start-logo" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0ndXRmLTgnPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8ZGVmcz4KICAgIDxjbGlwUGF0aCBpZD0ic3F1aXJjbGUiPgogICAgICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgcnk9IjExMiIvPgogICAgPC9jbGlwUGF0aD4KICA8L2RlZnM+CiAgPGcgY2xpcC1wYXRoPSJ1cmwoI3NxdWlyY2xlKSI+CiAgICA8cmVjdCB4PSIxMjAiIHk9IjEwMCIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyNjAiIHJ4PSIyOCIgZmlsbD0iIzBENDdBMSIvPgogICAgPHJlY3QgeD0iMTYwIiB5PSIxNDAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMjYwIiByeD0iMjgiIGZpbGw9IiMxOTc2RDIiLz4KICAgIDxyZWN0IHg9IjIwMCIgeT0iMTgwIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI2MCIgcng9IjI4IiBmaWxsPSIjNDJBNUY1Ii8+CiAgICA8cmVjdCB4PSIzMjgiIHk9IjM2OCIgd2lkdGg9IjUyIiBoZWlnaHQ9IjQwIiByeD0iMTIiIGZpbGw9IiNGRkZGRkYiLz4KICAgIDxwb2x5Z29uIHBvaW50cz0iMzM4LDQwOCAzMjgsNDI0IDM0OCw0MDgiIGZpbGw9IiNGRkZGRkYiLz4KICA8L2c+Cjwvc3ZnPg==" alt="">
+  <div class="start-title">Cнаб<span>Чат</span></div>
+  <div class="start-sub">Дирекция по закупкам · Сибирская генерирующая компания</div>
+  <button class="start-btn" id="startBtn">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="4,2 18,10 4,18" fill="white"/></svg>
+    Начать презентацию
+  </button>
+</div>
+
+<div class="mouse-spotlight"></div><div class="deck">
 
 <!-- ═══ SLIDE 1: TITLE (ANIMATED) ═══ -->
 <div class="slide active" data-slide="1" id="slide1" style="background:#F0F4FA">
@@ -866,8 +891,8 @@ for(let i=1;i<=total;i++){const dot=document.createElement('div');dot.className=
 function goToSlide(n){const prev=document.querySelector('.slide.active');const next=document.querySelector(`.slide[data-slide="${n}"]`);if(prev)prev.classList.remove('active');if(next){next.classList.add('active');animateSlide(next)}current=n;updateNav()}
 function changeSlide(dir){let next=current+dir;if(next<1)next=total;if(next>total)next=1;goToSlide(next)}
 function updateNav(){document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i+1===current));counter.textContent=current+' / '+total}
-document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();changeSlide(1)}if(e.key==='ArrowLeft'){e.preventDefault();changeSlide(-1)}});
-let touchStartX=0;document.addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX});document.addEventListener('touchend',e=>{const diff=touchStartX-e.changedTouches[0].clientX;if(Math.abs(diff)>50)changeSlide(diff>0?1:-1)});
+document.addEventListener('keydown',e=>{if(document.body.classList.contains('cinema-active'))return;if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();changeSlide(1)}if(e.key==='ArrowLeft'){e.preventDefault();changeSlide(-1)}});
+let touchStartX=0;document.addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX});document.addEventListener('touchend',e=>{if(document.body.classList.contains('cinema-active'))return;const diff=touchStartX-e.changedTouches[0].clientX;if(Math.abs(diff)>50)changeSlide(diff>0?1:-1)});
 function animateSlide(slide){slide.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transition='none';el.style.opacity='0';el.style.transform='translateY(20px)';el.offsetHeight;const delay=i*0.08;el.style.transition=`opacity .38s ease ${delay}s, transform .38s ease ${delay}s`;el.style.opacity='1';el.style.transform='translateY(0px)'})}
 document.addEventListener('mousemove',e=>{const spotlight=document.querySelector('.mouse-spotlight');if(spotlight){spotlight.style.background=`radial-gradient(520px circle at ${e.clientX}px ${e.clientY}px, rgba(37,99,235,.06), transparent 42%)`}});
 
@@ -920,451 +945,389 @@ window.initParticles=function(canvas,options){if(!canvas)return;const ctx=canvas
 const lastCanvas=document.querySelector('.slide[data-slide="17"] .particle-canvas');
 if(lastCanvas){const ro=new ResizeObserver(()=>{lastCanvas.width=lastCanvas.offsetWidth;lastCanvas.height=lastCanvas.offsetHeight});ro.observe(lastCanvas);setTimeout(()=>initParticles(lastCanvas,{count:35,color:'124,58,237'}),200)}
 
-// ═══ SLIDE 1 INTRO ANIMATION (8s, Zoom Punch + ElevenLabs Sound) ═══
+// ═══ UNIFIED START SCREEN + INTRO + CINEMA MODE ═══
 (function(){
   let introPlayed = false;
+  let cinemaOn = false;
+  let cinemaAudio = null;
+  let cinemaProgressRAF = null;
+  let introTimeouts = [];
   const nav = document.querySelector('.nav-controls');
   if(nav) nav.style.opacity = '0';
 
-  // ═══ INTRO SOUND: Professional Logo Reveal (Web Audio API) ═══
+  // ═══ NEW INTRO SOUND: Cinematic Whoosh + Orchestra Hit ═══
   function playIntroSound() {
     try {
       const ac = new (window.AudioContext || window.webkitAudioContext)();
       const t = ac.currentTime;
 
-      // --- Master compressor for glue ---
+      // Master bus
+      const master = ac.createGain();
+      master.gain.value = 0.85;
       const compressor = ac.createDynamicsCompressor();
-      compressor.threshold.value = -18;
-      compressor.ratio.value = 4;
-      compressor.connect(ac.destination);
+      compressor.threshold.value = -16;
+      compressor.ratio.value = 5;
+      compressor.attack.value = 0.003;
+      compressor.release.value = 0.15;
+      master.connect(compressor).connect(ac.destination);
 
-      // --- Convolution reverb (synthetic impulse) ---
-      const reverbLen = ac.sampleRate * 2.5;
-      const reverbBuf = ac.createBuffer(2, reverbLen, ac.sampleRate);
-      for (let ch = 0; ch < 2; ch++) {
-        const d = reverbBuf.getChannelData(ch);
-        for (let i = 0; i < reverbLen; i++) {
-          d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / reverbLen, 2.8);
-        }
+      // Reverb
+      const revLen = ac.sampleRate * 3;
+      const revBuf = ac.createBuffer(2, revLen, ac.sampleRate);
+      for(let ch=0;ch<2;ch++){const d=revBuf.getChannelData(ch);for(let i=0;i<revLen;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/revLen,3.2)}
+      const rev = ac.createConvolver(); rev.buffer = revBuf;
+      const revGain = ac.createGain(); revGain.gain.value = 0.25;
+      rev.connect(revGain).connect(master);
+      function send(node){node.connect(master);node.connect(rev)}
+
+      // ── LAYER 1 (0-3.5s): Deep cinematic drone ──
+      const drone = ac.createOscillator();
+      drone.type = 'sawtooth'; drone.frequency.value = 55;
+      const droneF = ac.createBiquadFilter();
+      droneF.type = 'lowpass'; droneF.frequency.value = 120; droneF.Q.value = 2;
+      const droneG = ac.createGain();
+      droneG.gain.setValueAtTime(0, t);
+      droneG.gain.linearRampToValueAtTime(0.12, t+0.5);
+      droneG.gain.linearRampToValueAtTime(0.18, t+3.0);
+      droneG.gain.linearRampToValueAtTime(0, t+4.0);
+      drone.connect(droneF).connect(droneG); send(droneG);
+      drone.start(t); drone.stop(t+4.2);
+
+      // ── LAYER 2 (0-4s): Rising tension sweep ──
+      const swpLen = ac.sampleRate*4.2;
+      const swpBuf = ac.createBuffer(1,swpLen,ac.sampleRate);
+      const sd=swpBuf.getChannelData(0);for(let i=0;i<swpLen;i++)sd[i]=Math.random()*2-1;
+      const swp=ac.createBufferSource();swp.buffer=swpBuf;
+      const swpF=ac.createBiquadFilter();swpF.type='bandpass';swpF.Q.value=12;
+      swpF.frequency.setValueAtTime(200,t);
+      swpF.frequency.exponentialRampToValueAtTime(4000,t+3.5);
+      swpF.frequency.exponentialRampToValueAtTime(14000,t+4.0);
+      const swpG=ac.createGain();
+      swpG.gain.setValueAtTime(0,t);
+      swpG.gain.linearRampToValueAtTime(0.04,t+0.8);
+      swpG.gain.linearRampToValueAtTime(0.12,t+3.5);
+      swpG.gain.linearRampToValueAtTime(0,t+4.2);
+      swp.connect(swpF).connect(swpG);send(swpG);
+      swp.start(t);swp.stop(t+4.3);
+
+      // ── LAYER 3 (1-4s): Heartbeat pulses (synced with logo) ──
+      function pulse(time,freq,vol){
+        const o=ac.createOscillator();o.type='sine';o.frequency.value=freq;
+        const g=ac.createGain();
+        g.gain.setValueAtTime(0,t+time);
+        g.gain.linearRampToValueAtTime(vol,t+time+0.03);
+        g.gain.exponentialRampToValueAtTime(0.001,t+time+0.35);
+        o.connect(g);send(g);o.start(t+time);o.stop(t+time+0.4);
       }
-      const reverb = ac.createConvolver();
-      reverb.buffer = reverbBuf;
-      const reverbGain = ac.createGain();
-      reverbGain.gain.value = 0.3;
-      reverb.connect(reverbGain).connect(compressor);
-      const dry = ac.createGain();
-      dry.gain.value = 0.85;
-      dry.connect(compressor);
+      // Accelerating heartbeats
+      [1.0,1.7,2.3,2.8,3.2,3.5,3.7,3.85,3.95].forEach((time,i)=>{
+        pulse(time, 65, 0.08+i*0.015);
+      });
 
-      // Helper: connect node to both dry + reverb
-      function toMaster(node) {
-        node.connect(dry);
-        node.connect(reverb);
+      // ── LAYER 4 (4.0s): CINEMATIC IMPACT — boom + crash ──
+      // Sub boom
+      const boom=ac.createOscillator();boom.type='sine';
+      boom.frequency.setValueAtTime(150,t+4.0);
+      boom.frequency.exponentialRampToValueAtTime(30,t+4.8);
+      const boomG=ac.createGain();
+      boomG.gain.setValueAtTime(0,t+3.98);
+      boomG.gain.linearRampToValueAtTime(0.4,t+4.05);
+      boomG.gain.exponentialRampToValueAtTime(0.001,t+5.2);
+      boom.connect(boomG);send(boomG);
+      boom.start(t+3.98);boom.stop(t+5.3);
+
+      // Crash noise
+      const crLen=ac.sampleRate*0.5;
+      const crBuf=ac.createBuffer(1,crLen,ac.sampleRate);
+      const cd=crBuf.getChannelData(0);for(let i=0;i<crLen;i++)cd[i]=(Math.random()*2-1)*Math.pow(1-i/crLen,2.5);
+      const cr=ac.createBufferSource();cr.buffer=crBuf;
+      const crG=ac.createGain();crG.gain.setValueAtTime(0.22,t+4.0);
+      crG.gain.exponentialRampToValueAtTime(0.001,t+4.5);
+      cr.connect(crG);send(crG);cr.start(t+4.0);cr.stop(t+4.6);
+
+      // ── LAYER 5 (4.5-5.5s): Ethereal bell tones for title ──
+      function bell(freq,start,dur,vol){
+        const o=ac.createOscillator();o.type='sine';o.frequency.value=freq;
+        const o2=ac.createOscillator();o2.type='sine';o2.frequency.value=freq*3.01;
+        const g=ac.createGain();const g2=ac.createGain();
+        g.gain.setValueAtTime(0,t+start);g.gain.linearRampToValueAtTime(vol,t+start+0.015);
+        g.gain.exponentialRampToValueAtTime(0.001,t+start+dur);
+        g2.gain.setValueAtTime(0,t+start);g2.gain.linearRampToValueAtTime(vol*0.15,t+start+0.015);
+        g2.gain.exponentialRampToValueAtTime(0.001,t+start+dur*0.5);
+        o.connect(g);send(g);o2.connect(g2);send(g2);
+        o.start(t+start);o.stop(t+start+dur);
+        o2.start(t+start);o2.stop(t+start+dur);
       }
+      bell(784, 4.5, 2.0, 0.10);  // G5 — "Снаб"
+      bell(988, 4.8, 1.8, 0.09);  // B5 — "Чат"
+      bell(1175, 5.1, 1.5, 0.07); // D6
+      bell(1568, 5.4, 2.0, 0.06); // G6 — shimmer
 
-      // ──── LAYER 1 (0-1s): Sub bass rumble on pulse start ────
-      const sub = ac.createOscillator();
-      sub.type = 'sine';
-      sub.frequency.value = 55;
-      const subGain = ac.createGain();
-      subGain.gain.setValueAtTime(0, t);
-      subGain.gain.linearRampToValueAtTime(0.2, t + 0.15);
-      subGain.gain.exponentialRampToValueAtTime(0.001, t + 1.8);
-      sub.connect(subGain);
-      toMaster(subGain);
-      sub.start(t); sub.stop(t + 2);
-
-      // ──── LAYER 2 (0-4.3s): Rising shimmer sweep (synced with accelerating pulses) ────
-      const shimmerLen = ac.sampleRate * 4.5;
-      const shimmerBuf = ac.createBuffer(1, shimmerLen, ac.sampleRate);
-      const sd = shimmerBuf.getChannelData(0);
-      for (let i = 0; i < shimmerLen; i++) sd[i] = (Math.random() * 2 - 1);
-      const shimmer = ac.createBufferSource();
-      shimmer.buffer = shimmerBuf;
-      const shimmerFilter = ac.createBiquadFilter();
-      shimmerFilter.type = 'bandpass';
-      shimmerFilter.Q.value = 8;
-      shimmerFilter.frequency.setValueAtTime(300, t);
-      shimmerFilter.frequency.exponentialRampToValueAtTime(6000, t + 3.8);
-      shimmerFilter.frequency.exponentialRampToValueAtTime(12000, t + 4.3);
-      const shimmerGain = ac.createGain();
-      shimmerGain.gain.setValueAtTime(0, t);
-      shimmerGain.gain.linearRampToValueAtTime(0.06, t + 1.0);
-      shimmerGain.gain.linearRampToValueAtTime(0.14, t + 3.8);
-      shimmerGain.gain.linearRampToValueAtTime(0, t + 4.5);
-      shimmer.connect(shimmerFilter).connect(shimmerGain);
-      toMaster(shimmerGain);
-      shimmer.start(t); shimmer.stop(t + 4.5);
-
-      // ──── LAYER 3 (4.3s): Impact hit — deep boom at zoom punch ────
-      const boom = ac.createOscillator();
-      boom.type = 'sine';
-      boom.frequency.setValueAtTime(120, t + 4.3);
-      boom.frequency.exponentialRampToValueAtTime(35, t + 5.0);
-      const boomGain = ac.createGain();
-      boomGain.gain.setValueAtTime(0, t + 4.28);
-      boomGain.gain.linearRampToValueAtTime(0.35, t + 4.35);
-      boomGain.gain.exponentialRampToValueAtTime(0.001, t + 5.5);
-      boom.connect(boomGain);
-      toMaster(boomGain);
-      boom.start(t + 4.28); boom.stop(t + 5.5);
-
-      // Impact noise burst
-      const impactLen = ac.sampleRate * 0.3;
-      const impactBuf = ac.createBuffer(1, impactLen, ac.sampleRate);
-      const id = impactBuf.getChannelData(0);
-      for (let i = 0; i < impactLen; i++) id[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / impactLen, 3);
-      const impact = ac.createBufferSource();
-      impact.buffer = impactBuf;
-      const impactGain = ac.createGain();
-      impactGain.gain.setValueAtTime(0.2, t + 4.3);
-      impactGain.gain.exponentialRampToValueAtTime(0.001, t + 4.6);
-      impact.connect(impactGain);
-      toMaster(impactGain);
-      impact.start(t + 4.3); impact.stop(t + 4.7);
-
-      // ──── LAYER 4 (4.9-5.8s): Crystal chimes — title reveal ────
-      function chime(freq, start, dur, vol) {
-        const osc = ac.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        const g = ac.createGain();
-        g.gain.setValueAtTime(0, t + start);
-        g.gain.linearRampToValueAtTime(vol, t + start + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.001, t + start + dur);
-        // Add harmonic
-        const osc2 = ac.createOscillator();
-        osc2.type = 'sine';
-        osc2.frequency.value = freq * 2.01;
-        const g2 = ac.createGain();
-        g2.gain.setValueAtTime(0, t + start);
-        g2.gain.linearRampToValueAtTime(vol * 0.3, t + start + 0.02);
-        g2.gain.exponentialRampToValueAtTime(0.001, t + start + dur * 0.7);
-        osc.connect(g); toMaster(g);
-        osc2.connect(g2); toMaster(g2);
-        osc.start(t + start); osc.stop(t + start + dur);
-        osc2.start(t + start); osc2.stop(t + start + dur);
+      // ── LAYER 6 (5.5-8s): Warm cinematic pad resolve ──
+      function pad(freq,det){
+        const o=ac.createOscillator();o.type='triangle';o.frequency.value=freq;o.detune.value=det;
+        const g=ac.createGain();
+        g.gain.setValueAtTime(0,t+5.5);
+        g.gain.linearRampToValueAtTime(0.035,t+6.2);
+        g.gain.linearRampToValueAtTime(0.025,t+7.5);
+        g.gain.exponentialRampToValueAtTime(0.001,t+9.0);
+        o.connect(g);send(g);o.start(t+5.5);o.stop(t+9.2);
       }
-      chime(1047, 4.9, 1.5, 0.10);  // C6 — "Снаб" появляется
-      chime(1319, 5.2, 1.3, 0.09);  // E6 — "Чат" появляется
-      chime(1568, 5.5, 1.1, 0.07);  // G6
-      chime(2093, 5.8, 1.5, 0.06);  // C7 — финальный блеск
+      // G major chord
+      pad(196,-6);pad(196,6);  // G3
+      pad(247,-4);pad(247,4);  // B3
+      pad(294,-8);pad(294,8);  // D4
+      pad(392,-3);pad(392,3);  // G4
 
-      // ──── LAYER 5 (6.5-8s): Warm pad resolve ────
-      function padVoice(freq, detune) {
-        const osc = ac.createOscillator();
-        osc.type = 'triangle';
-        osc.frequency.value = freq;
-        osc.detune.value = detune;
-        const g = ac.createGain();
-        g.gain.setValueAtTime(0, t + 6.3);
-        g.gain.linearRampToValueAtTime(0.04, t + 6.8);
-        g.gain.linearRampToValueAtTime(0.03, t + 7.5);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 8.5);
-        osc.connect(g); toMaster(g);
-        osc.start(t + 6.3); osc.stop(t + 8.5);
-      }
-      // C major chord pad
-      padVoice(262, -5);  padVoice(262, 5);   // C4
-      padVoice(330, -3);  padVoice(330, 3);   // E4
-      padVoice(392, -7);  padVoice(392, 7);   // G4
-
-    } catch(e) {}
+    }catch(e){}
   }
 
-  // Play sound on first user interaction (autoplay policy)
-  let soundQueued = true;
-  function trySoundOnInteraction() {
-    if (!soundQueued) return;
-    soundQueued = false;
-    playIntroSound();
-    document.removeEventListener('click', trySoundOnInteraction);
-    document.removeEventListener('touchstart', trySoundOnInteraction);
+  // ═══ SHOW SLIDE 1 STATIC (when returning to slide 1) ═══
+  function showSlide1Static(){
+    const logo=document.getElementById('animLogo'),glow=document.getElementById('logoGlow'),
+      title=document.getElementById('animTitle'),snab=document.getElementById('animSnab'),
+      chat=document.getElementById('animChat'),sub=document.getElementById('animSubtitle'),
+      div=document.getElementById('animDivider');
+    if(logo){logo.style.transition='none';logo.style.opacity='1';logo.style.transform='scale(1)';logo.style.filter='drop-shadow(0 18px 34px rgba(90,157,214,.14))';}
+    if(glow){glow.style.transition='none';glow.style.opacity='0';}
+    if(title){title.style.transition='none';title.style.opacity='1';}
+    if(snab){snab.style.transition='none';snab.style.opacity='1';snab.style.transform='scale(1)';snab.style.filter='blur(0)';}
+    if(chat){chat.style.transition='none';chat.style.opacity='1';chat.style.transform='scale(1)';chat.style.filter='blur(0)';}
+    if(sub){sub.style.transition='none';sub.style.opacity='1';sub.innerHTML='Дирекция по закупкам · Сибирская генерирующая компания';}
+    if(div){div.style.transition='none';div.style.opacity='1';div.style.width='80px';}
   }
-  document.addEventListener('click', trySoundOnInteraction, { once: true });
-  document.addEventListener('touchstart', trySoundOnInteraction, { once: true });
-  // Also try immediately (works on desktop)
-  playIntroSound();
 
-  // Patch goToSlide for static return
+  // Patch goToSlide for static slide-1 return
   const origGoToSlide = goToSlide;
-  goToSlide = function(n) {
-    if(n === 1 && introPlayed) {
-      const prev = document.querySelector('.slide.active');
-      const next = document.querySelector('.slide[data-slide="1"]');
-      if(prev) prev.classList.remove('active');
-      if(next) next.classList.add('active');
-      current = 1; updateNav(); showSlide1Static();
+  goToSlide = function(n){
+    if(n===1 && introPlayed){
+      const prev=document.querySelector('.slide.active'),next=document.querySelector('.slide[data-slide="1"]');
+      if(prev)prev.classList.remove('active');
+      if(next){next.classList.add('active');}
+      current=1;updateNav();showSlide1Static();
     } else { origGoToSlide(n); }
   };
 
-  function showSlide1Static() {
-    const logo = document.getElementById('animLogo');
-    const glow = document.getElementById('logoGlow');
-    const title = document.getElementById('animTitle');
-    const snab = document.getElementById('animSnab');
-    const chat = document.getElementById('animChat');
-    const sub = document.getElementById('animSubtitle');
-    const div = document.getElementById('animDivider');
-    // Logo back at normal size, title visible
-    if(logo) { logo.style.transition='none'; logo.style.opacity='1'; logo.style.transform='scale(1)'; logo.style.filter='drop-shadow(0 18px 34px rgba(90,157,214,.14))'; }
-    if(glow) { glow.style.transition='none'; glow.style.opacity='0'; }
-    if(title) { title.style.transition='none'; title.style.opacity='1'; }
-    if(snab) { snab.style.transition='none'; snab.style.opacity='1'; snab.style.transform='scale(1)'; snab.style.filter='blur(0)'; }
-    if(chat) { chat.style.transition='none'; chat.style.opacity='1'; chat.style.transform='scale(1)'; chat.style.filter='blur(0)'; }
-    if(sub) { sub.style.transition='none'; sub.style.opacity='1'; sub.innerHTML='\u0414\u0438\u0440\u0435\u043a\u0446\u0438\u044f \u043f\u043e \u0437\u0430\u043a\u0443\u043f\u043a\u0430\u043c \u00b7 \u0421\u0438\u0431\u0438\u0440\u0441\u043a\u0430\u044f \u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u044e\u0449\u0430\u044f \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u044f'; }
-    if(div) { div.style.transition='none'; div.style.opacity='1'; div.style.width='80px'; }
-  }
+  // ═══ INTRO ANIMATION (triggered by start button) ═══
+  function runIntroAnimation(){
+    const logo=document.getElementById('animLogo'),glow=document.getElementById('logoGlow'),
+      titleWrap=document.getElementById('animTitle'),snab=document.getElementById('animSnab'),
+      chat=document.getElementById('animChat'),subtitle=document.getElementById('animSubtitle'),
+      divider=document.getElementById('animDivider');
 
-  const logo = document.getElementById('animLogo');
-  const glow = document.getElementById('logoGlow');
-  const titleWrap = document.getElementById('animTitle');
-  const snab = document.getElementById('animSnab');
-  const chat = document.getElementById('animChat');
-  const subtitle = document.getElementById('animSubtitle');
-  const divider = document.getElementById('animDivider');
-
-  // === PHASE 1 (1.0-4.2s): Accelerating pulse ===
-  // 9 beats, each faster and brighter
-  const intervals = [700, 600, 500, 400, 300, 250, 200, 180, 150];
-  const opacities =  [.06, .12, .20, .30, .40, .52, .65, .80, .95];
-  let cumulative = 1000; // start at 1s
-
-  intervals.forEach((dur, i) => {
-    const t = cumulative;
-    cumulative += dur;
-    setTimeout(() => {
-      if(!logo) return;
-      logo.style.transition = `opacity ${dur*0.4}ms ease, transform ${dur*0.4}ms ease`;
-      logo.style.opacity = String(opacities[i]);
-      logo.style.transform = `scale(${1 + (0.06 - i*0.003)})`;
-      setTimeout(() => {
-        logo.style.transition = `opacity ${dur*0.5}ms ease, transform ${dur*0.5}ms ease`;
-        logo.style.opacity = String(opacities[i] * 0.5);
-        logo.style.transform = 'scale(1)';
-      }, dur * 0.45);
-    }, t);
-  });
-  // cumulative is now ~4380
-
-  // === PHASE 2 (4.3-4.7s): Stabilize to full, glow ===
-  setTimeout(() => {
-    if(!logo) return;
-    logo.style.transition = 'opacity 0.3s ease, transform 0.2s ease';
-    logo.style.opacity = '1';
-    logo.style.transform = 'scale(1)';
-    if(glow) { glow.style.transition = 'opacity 0.5s ease'; glow.style.opacity = '0.6'; }
-  }, 4400);
-
-  // === PHASE 3 (4.8s): ZOOM PUNCH (slow, 1.2s) ===
-  setTimeout(() => {
-    if(!logo) return;
-    logo.style.transition = 'transform 1.2s cubic-bezier(0.16,1,0.3,1), opacity 1s ease-in, filter 1s ease';
-    logo.style.transform = 'scale(4)';
-    logo.style.opacity = '0';
-    logo.style.filter = 'drop-shadow(0 18px 34px rgba(90,157,214,.14)) blur(8px)';
-    if(glow) { glow.style.transition = 'opacity 0.8s ease 0.3s'; glow.style.opacity = '0'; }
-  }, 4800);
-
-  // === PHASE 4 (5.4-6s): Title appears ===
-  setTimeout(() => {
-    if(titleWrap) titleWrap.style.opacity = '1';
-    if(snab) {
-      snab.style.transition = 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1), filter 0.6s ease';
-      snab.style.opacity = '1'; snab.style.transform = 'scale(1)'; snab.style.filter = 'blur(0)';
-    }
-  }, 5400);
-
-  setTimeout(() => {
-    if(chat) {
-      chat.style.transition = 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1), filter 0.6s ease';
-      chat.style.opacity = '1'; chat.style.transform = 'scale(1)'; chat.style.filter = 'blur(0)';
-    }
-  }, 5700);
-
-  // === PHASE 4b (6.2s): Logo returns at normal size ===
-  setTimeout(() => {
-    if(!logo) return;
-    logo.style.transition = 'none';
-    logo.style.transform = 'scale(1)';
-    logo.style.filter = 'drop-shadow(0 18px 34px rgba(90,157,214,.14))';
-    void logo.offsetHeight;
-    logo.style.transition = 'opacity 0.8s ease';
-    logo.style.opacity = '1';
-  }, 6200);
-
-  // === PHASE 5 (6.8-7.6s): Subtitle word by word ===
-  setTimeout(() => {
-    if(!subtitle) return;
-    const words = ['\u0414\u0438\u0440\u0435\u043a\u0446\u0438\u044f','\u043f\u043e','\u0437\u0430\u043a\u0443\u043f\u043a\u0430\u043c','\u00b7','\u0421\u0438\u0431\u0438\u0440\u0441\u043a\u0430\u044f','\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u044e\u0449\u0430\u044f','\u043a\u043e\u043c\u043f\u0430\u043d\u0438\u044f'];
-    subtitle.style.opacity = '1';
-    subtitle.innerHTML = '';
-    words.forEach((word,i) => {
-      const span = document.createElement('span');
-      span.textContent = word;
-      span.style.opacity = '0';
-      span.style.display = 'inline';
-      if(i>0) subtitle.appendChild(document.createTextNode(' '));
-      span.style.transition = `opacity 0.3s ease ${i*0.1}s`;
-      subtitle.appendChild(span);
-      setTimeout(() => { span.style.opacity = '1'; }, 50);
+    // Phase 1 (0.5-3.9s): Accelerating pulse
+    const intervals=[700,600,500,400,300,250,200,180,150];
+    const opacities=[.06,.12,.20,.30,.40,.52,.65,.80,.95];
+    let cum=500;
+    intervals.forEach((dur,i)=>{
+      const tt=cum;cum+=dur;
+      introTimeouts.push(setTimeout(()=>{
+        if(!logo)return;
+        logo.style.transition=`opacity ${dur*0.4}ms ease, transform ${dur*0.4}ms ease`;
+        logo.style.opacity=String(opacities[i]);
+        logo.style.transform=`scale(${1+(0.06-i*0.003)})`;
+        setTimeout(()=>{
+          logo.style.transition=`opacity ${dur*0.5}ms ease, transform ${dur*0.5}ms ease`;
+          logo.style.opacity=String(opacities[i]*0.5);
+          logo.style.transform='scale(1)';
+        },dur*0.45);
+      },tt));
     });
-  }, 6800);
 
-  // === PHASE 6 (7.6-8.2s): Divider + nav ===
-  setTimeout(() => {
-    if(divider) {
-      divider.style.opacity = '1';
-      divider.style.transition = 'width 0.6s cubic-bezier(0.22,1,0.36,1)';
-      divider.style.width = '80px';
-    }
-  }, 7600);
+    // Phase 2 (4.0s): Stabilize
+    introTimeouts.push(setTimeout(()=>{
+      if(!logo)return;
+      logo.style.transition='opacity 0.3s ease, transform 0.2s ease';
+      logo.style.opacity='1';logo.style.transform='scale(1)';
+      if(glow){glow.style.transition='opacity 0.5s ease';glow.style.opacity='0.6';}
+    },4000));
 
-  setTimeout(() => {
-    if(nav) { nav.style.transition = 'opacity 0.6s ease'; nav.style.opacity = '1'; }
-    introPlayed = true;
-  }, 8200);
+    // Phase 3 (4.3s): Zoom punch
+    introTimeouts.push(setTimeout(()=>{
+      if(!logo)return;
+      logo.style.transition='transform 1.2s cubic-bezier(0.16,1,0.3,1), opacity 1s ease-in, filter 1s ease';
+      logo.style.transform='scale(4)';logo.style.opacity='0';
+      logo.style.filter='drop-shadow(0 18px 34px rgba(90,157,214,.14)) blur(8px)';
+      if(glow){glow.style.transition='opacity 0.8s ease 0.3s';glow.style.opacity='0';}
+    },4300));
 
-})();
-</script>
+    // Phase 4 (5.0s): Title appears
+    introTimeouts.push(setTimeout(()=>{
+      if(titleWrap)titleWrap.style.opacity='1';
+      if(snab){snab.style.transition='opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1), filter 0.6s ease';
+        snab.style.opacity='1';snab.style.transform='scale(1)';snab.style.filter='blur(0)';}
+    },5000));
 
-<script>
-// ═══ CINEMA MODE — Audio narration with auto-advance ═══
-(function() {
-  let cinemaOn = false;
-  let cinemaAudio = null;
-  let cinemaProgressRAF = null;
+    introTimeouts.push(setTimeout(()=>{
+      if(chat){chat.style.transition='opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1), filter 0.6s ease';
+        chat.style.opacity='1';chat.style.transform='scale(1)';chat.style.filter='blur(0)';}
+    },5300));
 
-  window.toggleCinema = function() {
-    cinemaOn = !cinemaOn;
-    const overlay = document.getElementById('cinemaOverlay');
-    const dim = document.getElementById('cinemaDim');
-    const indicator = document.getElementById('cinemaAudioIndicator');
-    const btn = document.getElementById('cinemaBtn');
+    // Phase 4b (5.8s): Logo returns
+    introTimeouts.push(setTimeout(()=>{
+      if(!logo)return;
+      logo.style.transition='none';logo.style.transform='scale(1)';
+      logo.style.filter='drop-shadow(0 18px 34px rgba(90,157,214,.14))';
+      void logo.offsetHeight;
+      logo.style.transition='opacity 0.8s ease';logo.style.opacity='1';
+    },5800));
 
-    if (cinemaOn) {
-      // Stop regular autoplay if running
-      if (autoplayOn) toggleAutoplay();
+    // Phase 5 (6.2s): Subtitle word by word
+    introTimeouts.push(setTimeout(()=>{
+      if(!subtitle)return;
+      const words=['Дирекция','по','закупкам','·','Сибирская','генерирующая','компания'];
+      subtitle.style.opacity='1';subtitle.innerHTML='';
+      words.forEach((word,i)=>{
+        const span=document.createElement('span');span.textContent=word;
+        span.style.opacity='0';span.style.display='inline';
+        if(i>0)subtitle.appendChild(document.createTextNode(' '));
+        span.style.transition=`opacity 0.3s ease ${i*0.1}s`;
+        subtitle.appendChild(span);
+        setTimeout(()=>{span.style.opacity='1';},50);
+      });
+    },6200));
 
-      overlay.style.display = 'block';
-      document.body.classList.add('cinema-active');
-      setTimeout(() => { dim.style.background = 'rgba(0,0,0,0.15)'; }, 50);
-      indicator.style.opacity = '1';
-      btn.innerHTML = '⏹';
-      btn.title = 'Остановить кино-режим';
+    // Phase 6 (7.0s): Divider
+    introTimeouts.push(setTimeout(()=>{
+      if(divider){divider.style.opacity='1';divider.style.transition='width 0.6s cubic-bezier(0.22,1,0.36,1)';divider.style.width='80px';}
+    },7000));
 
-      // Start playing current slide audio
-      cinemaPlaySlide(current);
-    } else {
-      cinemaStop();
-      dim.style.background = 'rgba(0,0,0,0)';
-      indicator.style.opacity = '0';
-      setTimeout(() => { overlay.style.display = 'none'; }, 500);
-      document.body.classList.remove('cinema-active');
-      btn.innerHTML = '🎬';
-      btn.title = 'Кино-режим с озвучкой';
-    }
-  };
-
-  function cinemaStop() {
-    if (cinemaAudio) {
-      cinemaAudio.pause();
-      cinemaAudio.src = '';
-      cinemaAudio = null;
-    }
-    if (cinemaProgressRAF) {
-      cancelAnimationFrame(cinemaProgressRAF);
-      cinemaProgressRAF = null;
-    }
-    const progress = document.getElementById('cinemaProgress');
-    if (progress) progress.style.width = '0%';
+    // Phase 7 (7.8s): Intro done, start slide 1 audio
+    introTimeouts.push(setTimeout(()=>{
+      introPlayed=true;
+      // Start slide 1 narration audio, then seamlessly continue
+      cinemaPlaySlide(1);
+    },7800));
   }
 
-  function cinemaPlaySlide(slideNum) {
-    if (!cinemaOn) return;
+  // ═══ CINEMA ENGINE ═══
+  function cinemaStop(){
+    if(cinemaAudio){cinemaAudio.pause();cinemaAudio.src='';cinemaAudio=null;}
+    if(cinemaProgressRAF){cancelAnimationFrame(cinemaProgressRAF);cinemaProgressRAF=null;}
+    const p=document.getElementById('cinemaProgress');if(p)p.style.width='0%';
+  }
+
+  function cinemaPlaySlide(slideNum){
+    if(!cinemaOn)return;
     cinemaStop();
 
-    // Update label
-    const label = document.getElementById('cinemaSlideLabel');
-    if (label) label.textContent = slideNum + ' / ' + total;
+    // Update indicator
+    const label=document.getElementById('cinemaSlideLabel');
+    if(label)label.textContent=slideNum+' / '+total;
 
-    // Navigate to slide
-    goToSlide(slideNum);
+    // Navigate (skip for slide 1 during intro — already there)
+    if(slideNum > 1 || introPlayed) goToSlide(slideNum);
 
-    // Small delay to let slide animation play before starting audio
-    const audioDelay = slideNum === 1 ? 8500 : 600;
+    // Audio delay: slide animations need time to play
+    const audioDelay = slideNum === 1 ? 0 : 500;
 
-    setTimeout(() => {
-      if (!cinemaOn) return;
+    setTimeout(()=>{
+      if(!cinemaOn)return;
+      cinemaAudio=new Audio('audio/slide'+slideNum+'.mp3');
+      cinemaAudio.volume=0.9;
 
-      cinemaAudio = new Audio('audio/slide' + slideNum + '.mp3');
-      cinemaAudio.volume = 0.9;
+      cinemaAudio.addEventListener('loadedmetadata',function(){updateCinemaProgress();});
 
-      cinemaAudio.addEventListener('loadedmetadata', function() {
-        updateCinemaProgress();
-      });
-
-      cinemaAudio.addEventListener('ended', function() {
-        if (!cinemaOn) return;
-        // Advance to next slide or stop at end
-        if (slideNum < total) {
-          setTimeout(() => {
-            cinemaPlaySlide(slideNum + 1);
-          }, 800); // brief pause between slides
+      cinemaAudio.addEventListener('ended',function(){
+        if(!cinemaOn)return;
+        if(slideNum<total){
+          setTimeout(()=>cinemaPlaySlide(slideNum+1), 600);
         } else {
-          // End of presentation
-          toggleCinema();
+          // Movie finished — show nav, end cinema
+          endCinema();
         }
       });
 
-      cinemaAudio.addEventListener('error', function() {
-        console.warn('Cinema: audio not found for slide ' + slideNum);
-        if (!cinemaOn) return;
-        // Skip to next slide after 4s if audio missing
-        if (slideNum < total) {
-          setTimeout(() => cinemaPlaySlide(slideNum + 1), 4000);
-        } else {
-          toggleCinema();
-        }
+      cinemaAudio.addEventListener('error',function(){
+        if(!cinemaOn)return;
+        if(slideNum<total){setTimeout(()=>cinemaPlaySlide(slideNum+1),3000);}
+        else endCinema();
       });
 
-      cinemaAudio.play().catch(e => {
-        console.warn('Cinema: play blocked for slide ' + slideNum, e);
-      });
+      cinemaAudio.play().catch(e=>console.warn('Cinema play blocked:',e));
     }, audioDelay);
   }
 
-  function updateCinemaProgress() {
-    const progress = document.getElementById('cinemaProgress');
-    if (!cinemaAudio || !progress || !cinemaOn) return;
-
-    function tick() {
-      if (!cinemaAudio || !cinemaOn) return;
-      const pct = cinemaAudio.duration ? (cinemaAudio.currentTime / cinemaAudio.duration * 100) : 0;
-      progress.style.width = pct + '%';
-      if (pct < 100) {
-        cinemaProgressRAF = requestAnimationFrame(tick);
-      }
+  function updateCinemaProgress(){
+    const progress=document.getElementById('cinemaProgress');
+    if(!cinemaAudio||!progress||!cinemaOn)return;
+    function tick(){
+      if(!cinemaAudio||!cinemaOn)return;
+      const pct=cinemaAudio.duration?(cinemaAudio.currentTime/cinemaAudio.duration*100):0;
+      progress.style.width=pct+'%';
+      if(pct<100)cinemaProgressRAF=requestAnimationFrame(tick);
     }
-    cinemaProgressRAF = requestAnimationFrame(tick);
+    cinemaProgressRAF=requestAnimationFrame(tick);
   }
 
-  // Keyboard shortcut: Escape to stop cinema
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && cinemaOn) {
-      toggleCinema();
+  function startCinema(){
+    cinemaOn=true;
+    if(autoplayOn)toggleAutoplay();
+    const overlay=document.getElementById('cinemaOverlay');
+    const dim=document.getElementById('cinemaDim');
+    const indicator=document.getElementById('cinemaAudioIndicator');
+    const btn=document.getElementById('cinemaBtn');
+    overlay.style.display='block';
+    document.body.classList.add('cinema-active');
+    setTimeout(()=>{dim.style.background='rgba(0,0,0,0.12)';},50);
+    indicator.style.opacity='1';
+    if(btn){btn.innerHTML='⏹';btn.title='Остановить кино-режим';}
+  }
+
+  function endCinema(){
+    cinemaOn=false;
+    cinemaStop();
+    const overlay=document.getElementById('cinemaOverlay');
+    const dim=document.getElementById('cinemaDim');
+    const indicator=document.getElementById('cinemaAudioIndicator');
+    const btn=document.getElementById('cinemaBtn');
+    if(dim)dim.style.background='rgba(0,0,0,0)';
+    if(indicator)indicator.style.opacity='0';
+    setTimeout(()=>{if(overlay)overlay.style.display='none';},500);
+    document.body.classList.remove('cinema-active');
+    if(nav){nav.style.transition='opacity 0.6s ease';nav.style.opacity='1';}
+    if(btn){btn.innerHTML='🎬';btn.title='Кино-режим с озвучкой';}
+  }
+
+  // ═══ PUBLIC: toggleCinema (button in nav) ═══
+  window.toggleCinema = function(){
+    if(cinemaOn){
+      endCinema();
+    } else {
+      startCinema();
+      cinemaPlaySlide(current);
     }
+  };
+
+  // ═══ START BUTTON HANDLER ═══
+  document.getElementById('startBtn').addEventListener('click', function(e){
+    e.stopPropagation();
+    const screen = document.getElementById('startScreen');
+
+    // Activate cinema mode
+    startCinema();
+
+    // Play intro sound
+    playIntroSound();
+
+    // Hide start screen
+    screen.classList.add('hiding');
+    setTimeout(()=>{screen.style.display='none';},900);
+
+    // Run intro animation + seamless cinema
+    runIntroAnimation();
   });
 
-  // Stop cinema on manual slide change
-  const origChangeSlide = changeSlide;
-  changeSlide = function(dir) {
-    if (cinemaOn) {
-      // In cinema mode, manual navigation stops cinema
-      toggleCinema();
-    }
-    origChangeSlide(dir);
-  };
+  // Also allow clicking anywhere on start screen
+  document.getElementById('startScreen').addEventListener('click', function(){
+    document.getElementById('startBtn').click();
+  });
+
+  // Escape stops cinema
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape' && cinemaOn) endCinema();
+  });
+
 })();
 </script>
 
