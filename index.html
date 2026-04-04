@@ -87,6 +87,16 @@
       .nav-btn{width:30px;height:30px;font-size:1rem}
       .dot{width:7px;height:7px}
     }
+    /* Cinema mode */
+    @keyframes cinemaWave{0%,100%{height:4px}50%{height:18px}}
+    .cinema-active .nav-controls{background:rgba(0,0,0,.7)!important;border-color:rgba(255,255,255,.1)!important}
+    .cinema-active .nav-btn{background:rgba(255,255,255,.1)!important;color:#fff!important}
+    .cinema-active .nav-btn:hover{background:rgba(255,255,255,.2)!important}
+    .cinema-active .dot{background:rgba(255,255,255,.25)!important}
+    .cinema-active .dot.active{background:#42A5F5!important}
+    .cinema-active .slide-counter{color:rgba(255,255,255,.6)!important}
+    .cinema-active #cinemaBtn{background:#2563EB!important;color:#fff!important}
+
     .logo-clean{mix-blend-mode:normal}
     @media (max-width:900px){.logo-clean{width:min(46vw,250px)!important;max-width:250px!important}}
     @media (max-width:560px){.logo-clean{width:min(54vw,220px)!important;max-width:220px!important}}
@@ -824,7 +834,30 @@
   <div class="slide-dots" id="dots"></div>
   <button class="nav-btn" onclick="changeSlide(1)" aria-label="Следующий слайд">&#8250;</button>
   <button class="nav-btn" id="autoplayBtn" onclick="toggleAutoplay()" aria-label="Автолистание" title="Автолистание" style="font-size:.9rem">&#9654;</button>
+  <button class="nav-btn" id="cinemaBtn" onclick="toggleCinema()" aria-label="Кино-режим" title="Кино-режим с озвучкой" style="font-size:.85rem">🎬</button>
   <span class="slide-counter" id="counter">1 / 17</span>
+</div>
+
+<!-- Cinema mode overlay -->
+<div id="cinemaOverlay" style="display:none;position:fixed;inset:0;z-index:200;pointer-events:none">
+  <!-- Dim overlay -->
+  <div id="cinemaDim" style="position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .6s ease;pointer-events:none"></div>
+  <!-- Bottom progress bar -->
+  <div id="cinemaBar" style="position:absolute;bottom:0;left:0;right:0;height:4px;background:rgba(0,58,122,.12);z-index:201;pointer-events:none">
+    <div id="cinemaProgress" style="height:100%;width:0%;background:linear-gradient(90deg,#2563EB,#0099CC);border-radius:0 2px 2px 0;transition:width .3s linear"></div>
+  </div>
+  <!-- Audio waveform indicator -->
+  <div id="cinemaAudioIndicator" style="position:fixed;top:20px;right:20px;z-index:202;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.6);padding:8px 16px;border-radius:999px;opacity:0;transition:opacity .4s ease;pointer-events:auto">
+    <div class="cinema-wave" style="display:flex;align-items:center;gap:2px;height:18px">
+      <span class="cinema-wave-bar" style="width:3px;background:#0099CC;border-radius:2px;animation:cinemaWave 1.2s ease-in-out infinite"></span>
+      <span class="cinema-wave-bar" style="width:3px;background:#2563EB;border-radius:2px;animation:cinemaWave 1.2s ease-in-out infinite .15s"></span>
+      <span class="cinema-wave-bar" style="width:3px;background:#0099CC;border-radius:2px;animation:cinemaWave 1.2s ease-in-out infinite .3s"></span>
+      <span class="cinema-wave-bar" style="width:3px;background:#42A5F5;border-radius:2px;animation:cinemaWave 1.2s ease-in-out infinite .45s"></span>
+      <span class="cinema-wave-bar" style="width:3px;background:#0099CC;border-radius:2px;animation:cinemaWave 1.2s ease-in-out infinite .6s"></span>
+    </div>
+    <span style="color:#fff;font-size:.8rem;font-weight:600" id="cinemaSlideLabel">1 / 17</span>
+    <button onclick="toggleCinema()" style="background:none;border:none;color:#fff;font-size:1rem;cursor:pointer;padding:0 0 0 4px;opacity:.8" title="Остановить">✕</button>
+  </div>
 </div>
 
 <script>
@@ -1192,6 +1225,146 @@ if(lastCanvas){const ro=new ResizeObserver(()=>{lastCanvas.width=lastCanvas.offs
     introPlayed = true;
   }, 8200);
 
+})();
+</script>
+
+<script>
+// ═══ CINEMA MODE — Audio narration with auto-advance ═══
+(function() {
+  let cinemaOn = false;
+  let cinemaAudio = null;
+  let cinemaProgressRAF = null;
+
+  window.toggleCinema = function() {
+    cinemaOn = !cinemaOn;
+    const overlay = document.getElementById('cinemaOverlay');
+    const dim = document.getElementById('cinemaDim');
+    const indicator = document.getElementById('cinemaAudioIndicator');
+    const btn = document.getElementById('cinemaBtn');
+
+    if (cinemaOn) {
+      // Stop regular autoplay if running
+      if (autoplayOn) toggleAutoplay();
+
+      overlay.style.display = 'block';
+      document.body.classList.add('cinema-active');
+      setTimeout(() => { dim.style.background = 'rgba(0,0,0,0.15)'; }, 50);
+      indicator.style.opacity = '1';
+      btn.innerHTML = '⏹';
+      btn.title = 'Остановить кино-режим';
+
+      // Start playing current slide audio
+      cinemaPlaySlide(current);
+    } else {
+      cinemaStop();
+      dim.style.background = 'rgba(0,0,0,0)';
+      indicator.style.opacity = '0';
+      setTimeout(() => { overlay.style.display = 'none'; }, 500);
+      document.body.classList.remove('cinema-active');
+      btn.innerHTML = '🎬';
+      btn.title = 'Кино-режим с озвучкой';
+    }
+  };
+
+  function cinemaStop() {
+    if (cinemaAudio) {
+      cinemaAudio.pause();
+      cinemaAudio.src = '';
+      cinemaAudio = null;
+    }
+    if (cinemaProgressRAF) {
+      cancelAnimationFrame(cinemaProgressRAF);
+      cinemaProgressRAF = null;
+    }
+    const progress = document.getElementById('cinemaProgress');
+    if (progress) progress.style.width = '0%';
+  }
+
+  function cinemaPlaySlide(slideNum) {
+    if (!cinemaOn) return;
+    cinemaStop();
+
+    // Update label
+    const label = document.getElementById('cinemaSlideLabel');
+    if (label) label.textContent = slideNum + ' / ' + total;
+
+    // Navigate to slide
+    goToSlide(slideNum);
+
+    // Small delay to let slide animation play before starting audio
+    const audioDelay = slideNum === 1 ? 8500 : 600;
+
+    setTimeout(() => {
+      if (!cinemaOn) return;
+
+      cinemaAudio = new Audio('audio/slide' + slideNum + '.mp3');
+      cinemaAudio.volume = 0.9;
+
+      cinemaAudio.addEventListener('loadedmetadata', function() {
+        updateCinemaProgress();
+      });
+
+      cinemaAudio.addEventListener('ended', function() {
+        if (!cinemaOn) return;
+        // Advance to next slide or stop at end
+        if (slideNum < total) {
+          setTimeout(() => {
+            cinemaPlaySlide(slideNum + 1);
+          }, 800); // brief pause between slides
+        } else {
+          // End of presentation
+          toggleCinema();
+        }
+      });
+
+      cinemaAudio.addEventListener('error', function() {
+        console.warn('Cinema: audio not found for slide ' + slideNum);
+        if (!cinemaOn) return;
+        // Skip to next slide after 4s if audio missing
+        if (slideNum < total) {
+          setTimeout(() => cinemaPlaySlide(slideNum + 1), 4000);
+        } else {
+          toggleCinema();
+        }
+      });
+
+      cinemaAudio.play().catch(e => {
+        console.warn('Cinema: play blocked for slide ' + slideNum, e);
+      });
+    }, audioDelay);
+  }
+
+  function updateCinemaProgress() {
+    const progress = document.getElementById('cinemaProgress');
+    if (!cinemaAudio || !progress || !cinemaOn) return;
+
+    function tick() {
+      if (!cinemaAudio || !cinemaOn) return;
+      const pct = cinemaAudio.duration ? (cinemaAudio.currentTime / cinemaAudio.duration * 100) : 0;
+      progress.style.width = pct + '%';
+      if (pct < 100) {
+        cinemaProgressRAF = requestAnimationFrame(tick);
+      }
+    }
+    cinemaProgressRAF = requestAnimationFrame(tick);
+  }
+
+  // Keyboard shortcut: Escape to stop cinema
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && cinemaOn) {
+      toggleCinema();
+    }
+  });
+
+  // Stop cinema on manual slide change
+  const origChangeSlide = changeSlide;
+  changeSlide = function(dir) {
+    if (cinemaOn) {
+      // In cinema mode, manual navigation stops cinema
+      toggleCinema();
+    }
+    origChangeSlide(dir);
+  };
 })();
 </script>
 
