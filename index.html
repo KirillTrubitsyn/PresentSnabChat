@@ -823,6 +823,7 @@
   <button class="nav-btn" onclick="changeSlide(-1)" aria-label="Предыдущий слайд">&#8249;</button>
   <div class="slide-dots" id="dots"></div>
   <button class="nav-btn" onclick="changeSlide(1)" aria-label="Следующий слайд">&#8250;</button>
+  <button class="nav-btn" id="autoplayBtn" onclick="toggleAutoplay()" aria-label="Автолистание" title="Автолистание" style="font-size:.9rem">&#9654;</button>
   <span class="slide-counter" id="counter">1 / 17</span>
 </div>
 
@@ -837,6 +838,48 @@ let touchStartX=0;document.addEventListener('touchstart',e=>{touchStartX=e.touch
 function animateSlide(slide){slide.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transition='none';el.style.opacity='0';el.style.transform='translateY(20px)';el.offsetHeight;const delay=i*0.08;el.style.transition=`opacity .38s ease ${delay}s, transform .38s ease ${delay}s`;el.style.opacity='1';el.style.transform='translateY(0px)'})}
 document.addEventListener('mousemove',e=>{const spotlight=document.querySelector('.mouse-spotlight');if(spotlight){spotlight.style.background=`radial-gradient(520px circle at ${e.clientX}px ${e.clientY}px, rgba(37,99,235,.06), transparent 42%)`}});
 
+// ═══ AUTOPLAY ═══
+let autoplayTimer = null;
+let autoplayOn = false;
+const AUTOPLAY_INTERVAL = 6000; // 6 секунд на слайд
+
+function toggleAutoplay() {
+  autoplayOn = !autoplayOn;
+  const btn = document.getElementById('autoplayBtn');
+  if (autoplayOn) {
+    btn.innerHTML = '&#10074;&#10074;';
+    btn.style.background = '#EAF3FF';
+    startAutoplay();
+  } else {
+    btn.innerHTML = '&#9654;';
+    btn.style.background = '#fff';
+    stopAutoplay();
+  }
+}
+
+function startAutoplay() {
+  stopAutoplay();
+  autoplayTimer = setInterval(() => {
+    if (current >= total) {
+      toggleAutoplay(); // остановить на последнем слайде
+      return;
+    }
+    changeSlide(1);
+  }, AUTOPLAY_INTERVAL);
+}
+
+function stopAutoplay() {
+  if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
+}
+
+// Останавливать автопролистывание при ручном взаимодействии
+document.addEventListener('keydown', function autoStop(e) {
+  if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === ' ') && autoplayOn) toggleAutoplay();
+});
+document.addEventListener('touchend', function autoStopTouch(e) {
+  if (autoplayOn) toggleAutoplay();
+}, { passive: true });
+
 // Particle canvas (last slide)
 window.initParticles=function(canvas,options){if(!canvas)return;const ctx=canvas.getContext('2d');canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;const particles=[];const count=options?.count||40;for(let i=0;i<count;i++){particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*2+1,dx:(Math.random()-.5)*.5,dy:(Math.random()-.5)*.5,alpha:Math.random()*.4+.1})}function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);particles.forEach(p=>{p.x+=p.dx;p.y+=p.dy;if(p.x<0||p.x>canvas.width)p.dx*=-1;if(p.y<0||p.y>canvas.height)p.dy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(${options?.color||'37,99,235'},${p.alpha})`;ctx.fill()});requestAnimationFrame(draw)}draw()};
 
@@ -850,11 +893,62 @@ if(lastCanvas){const ro=new ResizeObserver(()=>{lastCanvas.width=lastCanvas.offs
   const nav = document.querySelector('.nav-controls');
   if(nav) nav.style.opacity = '0';
 
-  // Play ElevenLabs sound
-  try {
-    const introAudio = null; // audio removed for mobile compatibility
-    // audio disabled
-  } catch(e) {}
+  // Intro sound effect (Web Audio API — whoosh + chime)
+  function playIntroSound() {
+    try {
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      // Whoosh — filtered noise sweep
+      const bufLen = ac.sampleRate * 1.5;
+      const noiseBuf = ac.createBuffer(1, bufLen, ac.sampleRate);
+      const data = noiseBuf.getChannelData(0);
+      for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
+      const noiseNode = ac.createBufferSource();
+      noiseNode.buffer = noiseBuf;
+      const filter = ac.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(200, ac.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(3000, ac.currentTime + 0.6);
+      filter.frequency.exponentialRampToValueAtTime(200, ac.currentTime + 1.2);
+      filter.Q.value = 2;
+      const noiseGain = ac.createGain();
+      noiseGain.gain.setValueAtTime(0, ac.currentTime);
+      noiseGain.gain.linearRampToValueAtTime(0.15, ac.currentTime + 0.3);
+      noiseGain.gain.linearRampToValueAtTime(0, ac.currentTime + 1.2);
+      noiseNode.connect(filter).connect(noiseGain).connect(ac.destination);
+      noiseNode.start(); noiseNode.stop(ac.currentTime + 1.5);
+
+      // Chime — two tones at zoom punch moment (4.8s)
+      function playTone(freq, delay, duration) {
+        const osc = ac.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const g = ac.createGain();
+        g.gain.setValueAtTime(0, ac.currentTime + delay);
+        g.gain.linearRampToValueAtTime(0.12, ac.currentTime + delay + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + delay + duration);
+        osc.connect(g).connect(ac.destination);
+        osc.start(ac.currentTime + delay);
+        osc.stop(ac.currentTime + delay + duration);
+      }
+      playTone(880, 3.8, 1.2);   // A5 при zoom punch
+      playTone(1320, 4.0, 1.0);  // E6 гармоника
+      playTone(1760, 4.4, 0.8);  // A6 финальный тон
+    } catch(e) {}
+  }
+
+  // Play sound on first user interaction (autoplay policy)
+  let soundQueued = true;
+  function trySoundOnInteraction() {
+    if (!soundQueued) return;
+    soundQueued = false;
+    playIntroSound();
+    document.removeEventListener('click', trySoundOnInteraction);
+    document.removeEventListener('touchstart', trySoundOnInteraction);
+  }
+  document.addEventListener('click', trySoundOnInteraction, { once: true });
+  document.addEventListener('touchstart', trySoundOnInteraction, { once: true });
+  // Also try immediately (works on desktop)
+  playIntroSound();
 
   // Patch goToSlide for static return
   const origGoToSlide = goToSlide;
