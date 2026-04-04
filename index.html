@@ -893,46 +893,149 @@ if(lastCanvas){const ro=new ResizeObserver(()=>{lastCanvas.width=lastCanvas.offs
   const nav = document.querySelector('.nav-controls');
   if(nav) nav.style.opacity = '0';
 
-  // Intro sound effect (Web Audio API — whoosh + chime)
+  // ═══ INTRO SOUND: Professional Logo Reveal (Web Audio API) ═══
   function playIntroSound() {
     try {
       const ac = new (window.AudioContext || window.webkitAudioContext)();
-      // Whoosh — filtered noise sweep
-      const bufLen = ac.sampleRate * 1.5;
-      const noiseBuf = ac.createBuffer(1, bufLen, ac.sampleRate);
-      const data = noiseBuf.getChannelData(0);
-      for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
-      const noiseNode = ac.createBufferSource();
-      noiseNode.buffer = noiseBuf;
-      const filter = ac.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(200, ac.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(3000, ac.currentTime + 0.6);
-      filter.frequency.exponentialRampToValueAtTime(200, ac.currentTime + 1.2);
-      filter.Q.value = 2;
-      const noiseGain = ac.createGain();
-      noiseGain.gain.setValueAtTime(0, ac.currentTime);
-      noiseGain.gain.linearRampToValueAtTime(0.15, ac.currentTime + 0.3);
-      noiseGain.gain.linearRampToValueAtTime(0, ac.currentTime + 1.2);
-      noiseNode.connect(filter).connect(noiseGain).connect(ac.destination);
-      noiseNode.start(); noiseNode.stop(ac.currentTime + 1.5);
+      const t = ac.currentTime;
 
-      // Chime — two tones at zoom punch moment (4.8s)
-      function playTone(freq, delay, duration) {
+      // --- Master compressor for glue ---
+      const compressor = ac.createDynamicsCompressor();
+      compressor.threshold.value = -18;
+      compressor.ratio.value = 4;
+      compressor.connect(ac.destination);
+
+      // --- Convolution reverb (synthetic impulse) ---
+      const reverbLen = ac.sampleRate * 2.5;
+      const reverbBuf = ac.createBuffer(2, reverbLen, ac.sampleRate);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = reverbBuf.getChannelData(ch);
+        for (let i = 0; i < reverbLen; i++) {
+          d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / reverbLen, 2.8);
+        }
+      }
+      const reverb = ac.createConvolver();
+      reverb.buffer = reverbBuf;
+      const reverbGain = ac.createGain();
+      reverbGain.gain.value = 0.3;
+      reverb.connect(reverbGain).connect(compressor);
+      const dry = ac.createGain();
+      dry.gain.value = 0.85;
+      dry.connect(compressor);
+
+      // Helper: connect node to both dry + reverb
+      function toMaster(node) {
+        node.connect(dry);
+        node.connect(reverb);
+      }
+
+      // ──── LAYER 1 (0-1s): Sub bass rumble on pulse start ────
+      const sub = ac.createOscillator();
+      sub.type = 'sine';
+      sub.frequency.value = 55;
+      const subGain = ac.createGain();
+      subGain.gain.setValueAtTime(0, t);
+      subGain.gain.linearRampToValueAtTime(0.2, t + 0.15);
+      subGain.gain.exponentialRampToValueAtTime(0.001, t + 1.8);
+      sub.connect(subGain);
+      toMaster(subGain);
+      sub.start(t); sub.stop(t + 2);
+
+      // ──── LAYER 2 (0-4.3s): Rising shimmer sweep (synced with accelerating pulses) ────
+      const shimmerLen = ac.sampleRate * 4.5;
+      const shimmerBuf = ac.createBuffer(1, shimmerLen, ac.sampleRate);
+      const sd = shimmerBuf.getChannelData(0);
+      for (let i = 0; i < shimmerLen; i++) sd[i] = (Math.random() * 2 - 1);
+      const shimmer = ac.createBufferSource();
+      shimmer.buffer = shimmerBuf;
+      const shimmerFilter = ac.createBiquadFilter();
+      shimmerFilter.type = 'bandpass';
+      shimmerFilter.Q.value = 8;
+      shimmerFilter.frequency.setValueAtTime(300, t);
+      shimmerFilter.frequency.exponentialRampToValueAtTime(6000, t + 3.8);
+      shimmerFilter.frequency.exponentialRampToValueAtTime(12000, t + 4.3);
+      const shimmerGain = ac.createGain();
+      shimmerGain.gain.setValueAtTime(0, t);
+      shimmerGain.gain.linearRampToValueAtTime(0.06, t + 1.0);
+      shimmerGain.gain.linearRampToValueAtTime(0.14, t + 3.8);
+      shimmerGain.gain.linearRampToValueAtTime(0, t + 4.5);
+      shimmer.connect(shimmerFilter).connect(shimmerGain);
+      toMaster(shimmerGain);
+      shimmer.start(t); shimmer.stop(t + 4.5);
+
+      // ──── LAYER 3 (4.3s): Impact hit — deep boom at zoom punch ────
+      const boom = ac.createOscillator();
+      boom.type = 'sine';
+      boom.frequency.setValueAtTime(120, t + 4.3);
+      boom.frequency.exponentialRampToValueAtTime(35, t + 5.0);
+      const boomGain = ac.createGain();
+      boomGain.gain.setValueAtTime(0, t + 4.28);
+      boomGain.gain.linearRampToValueAtTime(0.35, t + 4.35);
+      boomGain.gain.exponentialRampToValueAtTime(0.001, t + 5.5);
+      boom.connect(boomGain);
+      toMaster(boomGain);
+      boom.start(t + 4.28); boom.stop(t + 5.5);
+
+      // Impact noise burst
+      const impactLen = ac.sampleRate * 0.3;
+      const impactBuf = ac.createBuffer(1, impactLen, ac.sampleRate);
+      const id = impactBuf.getChannelData(0);
+      for (let i = 0; i < impactLen; i++) id[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / impactLen, 3);
+      const impact = ac.createBufferSource();
+      impact.buffer = impactBuf;
+      const impactGain = ac.createGain();
+      impactGain.gain.setValueAtTime(0.2, t + 4.3);
+      impactGain.gain.exponentialRampToValueAtTime(0.001, t + 4.6);
+      impact.connect(impactGain);
+      toMaster(impactGain);
+      impact.start(t + 4.3); impact.stop(t + 4.7);
+
+      // ──── LAYER 4 (4.9-5.8s): Crystal chimes — title reveal ────
+      function chime(freq, start, dur, vol) {
         const osc = ac.createOscillator();
         osc.type = 'sine';
         osc.frequency.value = freq;
         const g = ac.createGain();
-        g.gain.setValueAtTime(0, ac.currentTime + delay);
-        g.gain.linearRampToValueAtTime(0.12, ac.currentTime + delay + 0.05);
-        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + delay + duration);
-        osc.connect(g).connect(ac.destination);
-        osc.start(ac.currentTime + delay);
-        osc.stop(ac.currentTime + delay + duration);
+        g.gain.setValueAtTime(0, t + start);
+        g.gain.linearRampToValueAtTime(vol, t + start + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, t + start + dur);
+        // Add harmonic
+        const osc2 = ac.createOscillator();
+        osc2.type = 'sine';
+        osc2.frequency.value = freq * 2.01;
+        const g2 = ac.createGain();
+        g2.gain.setValueAtTime(0, t + start);
+        g2.gain.linearRampToValueAtTime(vol * 0.3, t + start + 0.02);
+        g2.gain.exponentialRampToValueAtTime(0.001, t + start + dur * 0.7);
+        osc.connect(g); toMaster(g);
+        osc2.connect(g2); toMaster(g2);
+        osc.start(t + start); osc.stop(t + start + dur);
+        osc2.start(t + start); osc2.stop(t + start + dur);
       }
-      playTone(880, 3.8, 1.2);   // A5 при zoom punch
-      playTone(1320, 4.0, 1.0);  // E6 гармоника
-      playTone(1760, 4.4, 0.8);  // A6 финальный тон
+      chime(1047, 4.9, 1.5, 0.10);  // C6 — "Снаб" появляется
+      chime(1319, 5.2, 1.3, 0.09);  // E6 — "Чат" появляется
+      chime(1568, 5.5, 1.1, 0.07);  // G6
+      chime(2093, 5.8, 1.5, 0.06);  // C7 — финальный блеск
+
+      // ──── LAYER 5 (6.5-8s): Warm pad resolve ────
+      function padVoice(freq, detune) {
+        const osc = ac.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        osc.detune.value = detune;
+        const g = ac.createGain();
+        g.gain.setValueAtTime(0, t + 6.3);
+        g.gain.linearRampToValueAtTime(0.04, t + 6.8);
+        g.gain.linearRampToValueAtTime(0.03, t + 7.5);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 8.5);
+        osc.connect(g); toMaster(g);
+        osc.start(t + 6.3); osc.stop(t + 8.5);
+      }
+      // C major chord pad
+      padVoice(262, -5);  padVoice(262, 5);   // C4
+      padVoice(330, -3);  padVoice(330, 3);   // E4
+      padVoice(392, -7);  padVoice(392, 7);   // G4
+
     } catch(e) {}
   }
 
