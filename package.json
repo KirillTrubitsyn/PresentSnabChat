@@ -1,0 +1,19 @@
+{
+  "name": "presentsnabchat",
+  "version": "1.0.0",
+  "description": "Презентация AI-ассистента для отдела закупок СГК. 17 слайдов.",
+  "main": "sw.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:43519/git/KirillTrubitsyn/PresentSnabChat"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.56.1"
+  }
+}
