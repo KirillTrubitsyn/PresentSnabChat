@@ -206,18 +206,197 @@ const HIDE_UI_CSS = `
 
   await videoBrowser.close();
 
-  // Assemble PNG frames → MP4 via system ffmpeg (libx264)
+  // Render intro sound effect via OfflineAudioContext
+  console.log('  🔊 Рендеринг звукового эффекта (OfflineAudioContext)...');
+  const soundBrowser = await chromium.launch({ headless: true });
+  const soundPage = await (await soundBrowser.newContext()).newPage();
+  await soundPage.goto('about:blank');
+
+  const wavBase64 = await soundPage.evaluate(async (duration) => {
+    const sampleRate = 44100;
+    const length = sampleRate * duration;
+    const ac = new OfflineAudioContext(2, length, sampleRate);
+    const t = 0; // offline context starts at 0
+
+    // --- Master compressor ---
+    const compressor = ac.createDynamicsCompressor();
+    compressor.threshold.value = -18;
+    compressor.ratio.value = 4;
+    compressor.connect(ac.destination);
+
+    // --- Convolution reverb ---
+    const reverbLen = sampleRate * 2.5;
+    const reverbBuf = ac.createBuffer(2, reverbLen, sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = reverbBuf.getChannelData(ch);
+      for (let i = 0; i < reverbLen; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / reverbLen, 2.8);
+      }
+    }
+    const reverb = ac.createConvolver();
+    reverb.buffer = reverbBuf;
+    const reverbGain = ac.createGain();
+    reverbGain.gain.value = 0.3;
+    reverb.connect(reverbGain).connect(compressor);
+    const dry = ac.createGain();
+    dry.gain.value = 0.85;
+    dry.connect(compressor);
+
+    function toMaster(node) { node.connect(dry); node.connect(reverb); }
+
+    // LAYER 1: Sub bass rumble
+    const sub = ac.createOscillator(); sub.type = 'sine'; sub.frequency.value = 55;
+    const subGain = ac.createGain();
+    subGain.gain.setValueAtTime(0, t);
+    subGain.gain.linearRampToValueAtTime(0.2, t + 0.15);
+    subGain.gain.exponentialRampToValueAtTime(0.001, t + 1.8);
+    sub.connect(subGain); toMaster(subGain);
+    sub.start(t); sub.stop(t + 2);
+
+    // LAYER 2: Rising shimmer sweep
+    const shimmerLen = sampleRate * 4.5;
+    const shimmerBuf = ac.createBuffer(1, shimmerLen, sampleRate);
+    const sd = shimmerBuf.getChannelData(0);
+    for (let i = 0; i < shimmerLen; i++) sd[i] = (Math.random() * 2 - 1);
+    const shimmer = ac.createBufferSource(); shimmer.buffer = shimmerBuf;
+    const shimmerFilter = ac.createBiquadFilter();
+    shimmerFilter.type = 'bandpass'; shimmerFilter.Q.value = 8;
+    shimmerFilter.frequency.setValueAtTime(300, t);
+    shimmerFilter.frequency.exponentialRampToValueAtTime(6000, t + 3.8);
+    shimmerFilter.frequency.exponentialRampToValueAtTime(12000, t + 4.3);
+    const shimmerGain = ac.createGain();
+    shimmerGain.gain.setValueAtTime(0, t);
+    shimmerGain.gain.linearRampToValueAtTime(0.06, t + 1.0);
+    shimmerGain.gain.linearRampToValueAtTime(0.14, t + 3.8);
+    shimmerGain.gain.linearRampToValueAtTime(0, t + 4.5);
+    shimmer.connect(shimmerFilter).connect(shimmerGain); toMaster(shimmerGain);
+    shimmer.start(t); shimmer.stop(t + 4.5);
+
+    // LAYER 3: Impact boom
+    const boom = ac.createOscillator(); boom.type = 'sine';
+    boom.frequency.setValueAtTime(120, t + 4.3);
+    boom.frequency.exponentialRampToValueAtTime(35, t + 5.0);
+    const boomGain = ac.createGain();
+    boomGain.gain.setValueAtTime(0, t + 4.28);
+    boomGain.gain.linearRampToValueAtTime(0.35, t + 4.35);
+    boomGain.gain.exponentialRampToValueAtTime(0.001, t + 5.5);
+    boom.connect(boomGain); toMaster(boomGain);
+    boom.start(t + 4.28); boom.stop(t + 5.5);
+
+    // Impact noise burst
+    const impactLen = sampleRate * 0.3;
+    const impactBuf = ac.createBuffer(1, impactLen, sampleRate);
+    const id = impactBuf.getChannelData(0);
+    for (let i = 0; i < impactLen; i++) id[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / impactLen, 3);
+    const impact = ac.createBufferSource(); impact.buffer = impactBuf;
+    const impactGain = ac.createGain();
+    impactGain.gain.setValueAtTime(0.2, t + 4.3);
+    impactGain.gain.exponentialRampToValueAtTime(0.001, t + 4.6);
+    impact.connect(impactGain); toMaster(impactGain);
+    impact.start(t + 4.3); impact.stop(t + 4.7);
+
+    // LAYER 4: Crystal chimes
+    function chime(freq, start, dur, vol) {
+      const osc = ac.createOscillator(); osc.type = 'sine'; osc.frequency.value = freq;
+      const g = ac.createGain();
+      g.gain.setValueAtTime(0, t + start);
+      g.gain.linearRampToValueAtTime(vol, t + start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t + start + dur);
+      const osc2 = ac.createOscillator(); osc2.type = 'sine'; osc2.frequency.value = freq * 2.01;
+      const g2 = ac.createGain();
+      g2.gain.setValueAtTime(0, t + start);
+      g2.gain.linearRampToValueAtTime(vol * 0.3, t + start + 0.02);
+      g2.gain.exponentialRampToValueAtTime(0.001, t + start + dur * 0.7);
+      osc.connect(g); toMaster(g); osc2.connect(g2); toMaster(g2);
+      osc.start(t + start); osc.stop(t + start + dur);
+      osc2.start(t + start); osc2.stop(t + start + dur);
+    }
+    chime(1047, 4.9, 1.5, 0.10);
+    chime(1319, 5.2, 1.3, 0.09);
+    chime(1568, 5.5, 1.1, 0.07);
+    chime(2093, 5.8, 1.5, 0.06);
+
+    // LAYER 5: Warm pad resolve
+    function padVoice(freq, detune) {
+      const osc = ac.createOscillator(); osc.type = 'triangle';
+      osc.frequency.value = freq; osc.detune.value = detune;
+      const g = ac.createGain();
+      g.gain.setValueAtTime(0, t + 6.3);
+      g.gain.linearRampToValueAtTime(0.04, t + 6.8);
+      g.gain.linearRampToValueAtTime(0.03, t + 7.5);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 8.5);
+      osc.connect(g); toMaster(g);
+      osc.start(t + 6.3); osc.stop(t + 8.5);
+    }
+    padVoice(262, -5); padVoice(262, 5);
+    padVoice(330, -3); padVoice(330, 3);
+    padVoice(392, -7); padVoice(392, 7);
+
+    // Render
+    const rendered = await ac.startRendering();
+
+    // Encode to WAV (PCM 16-bit)
+    const numChannels = rendered.numberOfChannels;
+    const numFrames = rendered.length;
+    const bytesPerSample = 2;
+    const dataSize = numFrames * numChannels * bytesPerSample;
+    const buffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(buffer);
+
+    function writeStr(offset, str) { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); }
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * numChannels * bytesPerSample, true);
+    view.setUint16(32, numChannels * bytesPerSample, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    const channels = [];
+    for (let ch = 0; ch < numChannels; ch++) channels.push(rendered.getChannelData(ch));
+
+    let offset = 44;
+    for (let i = 0; i < numFrames; i++) {
+      for (let ch = 0; ch < numChannels; ch++) {
+        const s = Math.max(-1, Math.min(1, channels[ch][i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        offset += 2;
+      }
+    }
+
+    // Convert to base64
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  }, DURATION_SEC);
+
+  await soundBrowser.close();
+
+  // Save WAV file
+  const wavPath = path.join(OUT_DIR, '_intro_sound.wav');
+  const { writeFileSync } = await import('fs');
+  writeFileSync(wavPath, Buffer.from(wavBase64, 'base64'));
+  console.log('  ✅ Звуковой эффект отрендерен');
+
+  // Assemble PNG frames + audio → MP4 via system ffmpeg (libx264 + AAC)
   const mp4Out = path.join(OUT_DIR, 'slide1-intro.mp4');
-  console.log('  🔄 Сборка MP4 (H.264) из кадров...');
+  console.log('  🔄 Сборка MP4 (H.264 + AAC) из кадров + звук...');
   try {
-    execSync(`ffmpeg -y -framerate ${FPS} -i "${framesDir}/frame_%05d.png" -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart "${mp4Out}" 2>&1`, { timeout: 120000 });
-    console.log(`  ✅ slide1-intro.mp4 (${FPS}fps, H.264 CRF18)`);
+    execSync(`ffmpeg -y -framerate ${FPS} -i "${framesDir}/frame_%05d.png" -i "${wavPath}" -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -movflags +faststart "${mp4Out}" 2>&1`, { timeout: 120000 });
+    console.log(`  ✅ slide1-intro.mp4 (${FPS}fps, H.264 + AAC)`);
   } catch (e) {
     console.log(`  ⚠️  ffmpeg ошибка: ${e.message?.substring(0, 200)}`);
   }
 
-  // Clean up frames
-  try { execSync(`rm -rf "${framesDir}"`); } catch {}
+  // Clean up temp files
+  try { execSync(`rm -rf "${framesDir}" "${wavPath}"`); } catch {}
 
   // ════════════════════════════════════════
   // PART 3: Copy audio files
