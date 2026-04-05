@@ -167,13 +167,10 @@ const HIDE_UI_CSS = `
   const videoContext = await videoBrowser.newContext({
     viewport: { width: 1920, height: 1080 },
     deviceScaleFactor: 1,
-    recordVideo: {
-      dir: path.join(OUT_DIR, '_tmp_video'),
-      size: { width: 1920, height: 1080 },
-    },
   });
 
-  mkdirSync(path.join(OUT_DIR, '_tmp_video'), { recursive: true });
+  const framesDir = path.join(OUT_DIR, '_frames');
+  mkdirSync(framesDir, { recursive: true });
 
   const videoPage = await videoContext.newPage();
   await interceptTailwind(videoPage);
@@ -193,28 +190,34 @@ const HIDE_UI_CSS = `
   // Click to trigger Web Audio (autoplay policy)
   await videoPage.click('body').catch(() => {});
 
-  // Wait for the full 8.2s animation + buffer
-  console.log('  ⏳ Запись анимации (~10 сек)...');
-  await waitMs(10000);
+  // Capture frames at ~15fps for 10 seconds (150 frames)
+  const FPS = 15;
+  const DURATION_SEC = 10;
+  const totalFrames = FPS * DURATION_SEC;
+  const interval = 1000 / FPS;
 
-  // Close page to finalize video
-  const videoFile = await videoPage.video().path();
-  await videoContext.close();
-  await videoBrowser.close();
-
-  // Re-encode WebM with higher quality
-  const webmOut = path.join(OUT_DIR, 'slide1-intro.webm');
-  console.log('  🔄 Оптимизация видео (VP8 4Mbps)...');
-  try {
-    execSync(`"${FFMPEG}" -y -i "${videoFile}" -c:v libvpx -b:v 4M "${webmOut}" 2>/dev/null`);
-    console.log(`  ✅ slide1-intro.webm`);
-  } catch (e) {
-    cpSync(videoFile, webmOut);
-    console.log(`  ✅ slide1-intro.webm (raw)`);
+  console.log(`  ⏳ Покадровая съёмка (${FPS}fps × ${DURATION_SEC}s = ${totalFrames} кадров)...`);
+  for (let f = 0; f < totalFrames; f++) {
+    const framePath = path.join(framesDir, `frame_${String(f).padStart(5, '0')}.png`);
+    await videoPage.screenshot({ path: framePath, type: 'png' });
+    // Compensate for screenshot time — aim for real-time pacing
+    if (f < totalFrames - 1) await waitMs(Math.max(0, interval - 60));
   }
 
-  // Clean up temp video dir
-  try { execSync(`rm -rf "${path.join(OUT_DIR, '_tmp_video')}"`); } catch {}
+  await videoBrowser.close();
+
+  // Assemble PNG frames → MP4 via system ffmpeg (libx264)
+  const mp4Out = path.join(OUT_DIR, 'slide1-intro.mp4');
+  console.log('  🔄 Сборка MP4 (H.264) из кадров...');
+  try {
+    execSync(`ffmpeg -y -framerate ${FPS} -i "${framesDir}/frame_%05d.png" -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart "${mp4Out}" 2>&1`, { timeout: 120000 });
+    console.log(`  ✅ slide1-intro.mp4 (${FPS}fps, H.264 CRF18)`);
+  } catch (e) {
+    console.log(`  ⚠️  ffmpeg ошибка: ${e.message?.substring(0, 200)}`);
+  }
+
+  // Clean up frames
+  try { execSync(`rm -rf "${framesDir}"`); } catch {}
 
   // ════════════════════════════════════════
   // PART 3: Copy audio files
@@ -240,7 +243,7 @@ const HIDE_UI_CSS = `
   console.log('✅ Экспорт завершён!');
   console.log(`📁 Результат: ${OUT_DIR}/`);
   console.log(`   • slide-01.png ... slide-${pad(TOTAL_SLIDES)}.png (слайды 16:9)`);
-  console.log(`   • slide1-intro.webm (видео заставки)`);
+  console.log(`   • slide1-intro.mp4 (видео заставки, H.264)`);
   console.log(`   • audio/slide1.mp3 ... slide${TOTAL_SLIDES}.mp3 (озвучка)`);
   console.log('═'.repeat(50));
 })();
